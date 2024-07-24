@@ -1,0 +1,75 @@
+<odoo>
+<record id="action_server_stock_detail" model="ir.actions.server">
+    <field name="name">Show Stock Details</field>
+    <field name="model_id" ref="model_stock_detail"/>
+    <field name="binding_model_id" ref="model_stock_detail"/>
+    <field name="state">code</field>
+    <field name="code">action = records.filter_stock_record()</field>
+</record>
+
+    <record id="view_stock_detail_tree" model="ir.ui.view">
+        <field name="name">stock.detail.tree</field>
+        <field name="model">stock.detail</field>
+        <field name="arch" type="xml">
+            <tree string="Stock Detail">
+<!--                <header>-->
+<!--                    <button name="%(wh_in_out_report_xlsx_pdf.action_report_wizard)d" string="Stock Details Print"-->
+<!--                            type="action" class="oe_highlight"/>-->
+<!--                </header>-->
+                <field name="date_in_wh_location"/>
+                <field name="date_out_going_to_partner_customer"/>
+                <field name="serial"/>
+                <field name="inventory_variation_reference"/>
+                <field name="inventory_variation_name"/>
+                <field name="customer_name"/>
+                <field name="customer_address_st"/>
+                <field name="address_city"/>
+                <field name="address_zip"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_stock_detail_search_filter" model="ir.ui.view">
+        <field name="name">stock.detail.search</field>
+        <field name="model">stock.detail</field>
+        <field name="arch" type="xml">
+            <search string="Stock Details">
+                <filter string="Serial No" name="serial" domain="[('serial', '!=', context.get('serial'))]"/>
+                <filter string="Product" name="inventory_variation_name"
+                        domain="[('inventory_variation_name', '=', context.get('inventory_variation_name'))]"/>
+                <filter string="Customer" name="customer_name"
+                        domain="[('customer_name', '=', context.get('customer_name'))]"/>
+
+                <group expand="0" string="Group By">
+                    <filter string="Date" name="by_date" domain="[]" context="{'group_by': 'date_in_wh_location'}"/>
+                    <filter string="Serial No" name="serial" domain="[]" context="{'group_by': 'serial'}"/>
+                    <filter string="Product" name="inventory_variation_name" domain="[]"
+                            context="{'group_by': 'inventory_variation_name'}"/>
+                    <filter string="Customer" name="customer_name" domain="[]" context="{'group_by': 'customer_name'}"/>
+                </group>
+                <separator/>
+
+                <field name="serial"/>
+                <field name="inventory_variation_name"/>
+                <field name="customer_name"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_stock_detail" model="ir.actions.act_window">
+        <field name="name">Stock Details</field>
+        <field name="res_model">stock.detail</field>
+        <field name="view_mode">tree,search</field>
+    </record>
+
+       <menuitem id="menu_stock_detail"
+              name="Stock Details"
+              parent="stock.menu_stock_root"
+              action="action_stock_detail"/>
+    <menuitem id="menu_stock_move_wizard"
+              name="Process Stock Moves"
+              parent="menu_stock_detail"
+              action="action_stock_move_wizard"/>
+
+
+</odoo>

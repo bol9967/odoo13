@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data>
+        <template id="wh_in_out_report_pdf_id">
+            <t t-call="web.html_container">
+                <t t-call="web.basic_layout">
+                    <div class="page">
+                        <div>
+                            <h3 style="text-align:center;">Stock IN And Out Details</h3>
+                            <table width="100%" class="table table-bordered">
+                                <tr>
+                                    <th>Date In WH Location</th>
+                                    <th>Date Out Going to Partner/Customer</th>
+                                    <th>Serial</th>
+                                    <th>Inventory Variation Reference</th>
+                                    <th>Inventory Variation Name</th>
+                                    <th>Customer Name</th>
+                                    <th>Customer Address St</th>
+                                    <th>Address City</th>
+                                    <th>Address Zip</th>
+                                </tr>
+                                <!--                               <t t-if="doc.get('account_moves_data')">-->
+                                <t t-foreach="account_moves_data" t-as="move">
+                                    <tr>
+                                        <td>
+                                            <t t-if="move['serial_no'].startswith('WH/IN/')">
+                                                <span t-esc="move['date']"/>
+                                            </t>
+                                        </td>
+
+                                        <td>
+                                            <t t-if="move['serial_no'].startswith('WH/OUT/')">
+                                                <t t-esc="move['date']"/>
+                                            </t>
+                                        </td>
+                                        <!-- Lot No for stock out, blank for stock in -->
+                                        <td>
+                                            <t t-if="move['serial_no'].startswith('WH/OUT/')">
+                                                <t t-esc="move['lot_no']"/>
+                                            </t>
+                                        </td>
+                                        <td>
+                                            <t t-if="move['serial_no'].startswith('WH/OUT/')">
+                                                <t t-esc="move['serial_no']"/>
+                                            </t>
+                                        </td>
+
+
+                                        <!-- Product for stock out, blank for stock in -->
+                                        <td>
+                                            <t t-if="move['serial_no'].startswith('WH/OUT/')">
+                                                <t t-esc="move['product']"/>
+                                            </t>
+                                        </td>
+
+                                        <!-- Partner for stock out, blank for stock in -->
+                                        <td>
+                                            <t t-if="move['serial_no'].startswith('WH/OUT/')">
+                                                <t t-esc="move['partner']"/>
+                                            </t>
+                                        </td>
+
+                                        <!-- Partner Address for stock out, blank for stock in -->
+                                        <td>
+                                            <t t-if="move['serial_no'].startswith('WH/OUT/')">
+                                                <t t-esc="move['partner_address']"/>
+                                            </t>
+                                        </td>
+
+                                        <!-- Partner City for stock out, blank for stock in -->
+                                        <td>
+                                            <t t-if="move['serial_no'].startswith('WH/OUT/')">
+                                                <t t-esc="move['partner_city']"/>
+                                            </t>
+                                        </td>
+
+                                        <!-- Partner Zip for stock out, blank for stock in -->
+                                        <td>
+                                            <t t-if="move['serial_no'].startswith('WH/OUT/')">
+                                                <t t-esc="move['partner_zip']"/>
+                                            </t>
+                                        </td>
+                                    </tr>
+                                </t>                                <!--                                <t t-else="">-->
+                                <!--                                    <tr>-->
+                                <!--                                        <td colspan="8">No data available</td>-->
+                                <!--                                    </tr>-->
+                                <!--                                </t>-->
+
+                            </table>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </template>
+    </data>
+</odoo>
