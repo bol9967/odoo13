@@ -3,7 +3,6 @@ from odoo.tools.misc import xlsxwriter
 from datetime import datetime
 from num2words import num2words
 
-
 class CashBook(models.AbstractModel):
     _name = 'report.wh_in_out_report_xlsx_pdf.wh_in_out_report_xlsx_id'
     _inherit = 'report.report_xlsx.abstract'
@@ -15,32 +14,13 @@ class CashBook(models.AbstractModel):
         head = workbook.add_format({'align': 'center', 'bold': True, 'font_size': 20})
         format1 = workbook.add_format({'font_size': 10, 'align': 'center', 'bg_color': '#c5d3d4', 'border': 1})
         format2 = workbook.add_format({'font_size': 10, 'align': 'center', 'bold': True, 'border': 1})
-        format4 = workbook.add_format({'font_size': 10,
-                                       'align': 'left',
-                                       'valign': 'left',
-                                       'bg_color': '#b7c3c7',
-                                       'border': 1
-                                       })
-        format3 = workbook.add_format({
-            'font_size': 10,
-            'align': 'center',
-            'valign': 'vcenter',
-            'bold': True,
-            'bg_color': '#b7c3c7',
-            'border': 1
-        })
+        format4 = workbook.add_format({'font_size': 10, 'align': 'left', 'valign': 'left', 'bg_color': '#b7c3c7', 'border': 1})
+        format3 = workbook.add_format({'font_size': 10, 'align': 'center', 'valign': 'vcenter', 'bold': True, 'bg_color': '#b7c3c7', 'border': 1})
         txt = workbook.add_format({'font_size': 10, 'align': 'center'})
-        main_merge_format = workbook.add_format({
-            'bold': 1,
-            'align': 'center',
-            'valign': 'vcenter',
-            'font_size': '13',
-            "font_color": 'black',
-            "bg_color": '#F7DC6F',
-            'font_name': 'Metropolis',
-        })
+        main_merge_format = workbook.add_format({'bold': 1, 'align': 'center', 'valign': 'vcenter', 'font_size': '13', "font_color": 'black', "bg_color": '#F7DC6F', 'font_name': 'Metropolis'})
 
-        sheet.write('B2 ', 'Print Date:', cell_format)
+        # Header
+        sheet.write('B2', 'Print Date:', cell_format)
         sheet.set_column('B:C', 15)
         sheet.write('C2', data['current_date'], cell_format)
         sheet.write('B3', 'Print Time:', cell_format)
@@ -56,8 +36,9 @@ class CashBook(models.AbstractModel):
         t_row = 6
         col = 0
 
+        # Column Headers
         sheet.merge_range('A6:A7', "Date In WH Location", format3)
-        sheet.merge_range('B6:B7', "Date Out Going to Partner/Customer'", format3)
+        sheet.merge_range('B6:B7', "Date Out Going to Partner/Customer", format3)
         sheet.merge_range('C6:C7', "Serial", format3)
         sheet.merge_range('D6:D7', "Inventory Variation Reference", format3)
         sheet.merge_range('E6:E7', "Inventory Variation Name", format3)
@@ -66,6 +47,7 @@ class CashBook(models.AbstractModel):
         sheet.merge_range('H6:H7', "Address City", format3)
         sheet.merge_range('I6:I7', "Address Zip", format3)
 
+        # Set column widths
         col += 1
         sheet.set_column('D:D', 25)
         sheet.set_column('C:C', 15)
@@ -95,12 +77,12 @@ class CashBook(models.AbstractModel):
 
         row_number = t_row + 3
 
+        # Data rows
         for rec in data['account_moves_data']:
             t_row = t_row + 1
             row_number = t_row + 1
             if rec['serial_no'].startswith('WH/IN/'):
-                sheet.write(row_number+1, col - 11, rec['date'], format1)  # Writing date for incoming records
-
+                sheet.write(row_number + 1, col - 11, rec['date'], format1)  # Writing date for incoming records
             elif rec['serial_no'].startswith('WH/OUT/'):
                 sheet.write(row_number, col - 10, rec['date'], format1)
                 sheet.write(row_number, col - 9, rec['lot_no'], format1)
@@ -110,4 +92,3 @@ class CashBook(models.AbstractModel):
                 sheet.write(row_number, col - 5, rec['partner_address'], format1)
                 sheet.write(row_number, col - 4, rec['partner_city'], format1)
                 sheet.write(row_number, col - 3, rec['partner_zip'], format1)
-                # Writing date for outgoing records
