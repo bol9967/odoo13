@@ -11,6 +11,7 @@
             <field name="binding_model_id" ref="model_wh_wizard"/>
             <field name="binding_type">report</field>
         </record>
+
         <record id="wh_in_out_xlsx_action_report" model="ir.actions.report">
             <field name="name">Stock IN And Out Details Xlsx</field>
             <field name="model">wh.wizard</field>
@@ -21,6 +22,5 @@
             <field name="binding_model_id" ref="model_wh_wizard"/>
             <field name="binding_type">report</field>
         </record>
-
     </data>
 </odoo>
