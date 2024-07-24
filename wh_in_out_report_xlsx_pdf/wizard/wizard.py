@@ -1,24 +1,23 @@
 from odoo import fields, models, api
 from datetime import datetime
+from odoo.exceptions import UserError
 import pytz
 import json
-from odoo.exceptions import UserError
-
-
 
 class SummaryMovement(models.TransientModel):
     _name = 'wh.wizard'
     _description = "Account info wizard"
 
+    # Fields for the wizard
     date_start = fields.Date('Date From')
     date_end = fields.Date('Date To', default=fields.Date.today)
     product_id = fields.Many2one('product.product')
     lot_id = fields.Many2one('stock.production.lot')
     partner_id = fields.Many2one('res.partner', string='Customer')
-
     # Journal field in which we show only just two journal CRV and CPV not show other account in selection.
     # journal_ids = fields.Many2many('account.journal', string='Journals', required=True, )
 
+    # Method to generate Excel report
     def print_excel_report(self):
         domain = []
         product_id = self.product_id
@@ -28,25 +27,23 @@ class SummaryMovement(models.TransientModel):
         # partner_id = self.picking_id.partner_id
         # journal_ids = self.journal_ids.ids
 
+
         if date_start:
             domain += [('date', '>=', date_start)]
         if date_end:
             domain += [('date', '<=', date_end)]
         if product_id:
             domain += [('product_id', '=', product_id.id)]
-        # if journal_ids:
-        #     domain += [('journal_id', 'in', journal_ids)]
         if lot_id:
             domain += [('lot_id', '=', lot_id.id)]
 
-        # if partner_id:
-        #     domain += [('partner_id', '=', partner_id.id)]
-
+        # Search for stock move lines
         k_move_in = self.env['stock.move.line'].search(domain + [('location_dest_id.usage', '=', 'internal')])
         k_move_out = self.env['stock.move.line'].search(domain + [('location_id.usage', '=', 'internal')])
 
         product_moves = {}
 
+        # Categorize moves by product and lot
         for move in k_move_in:
             key = (move.product_id.id, move.lot_id.id)
             if key not in product_moves:
@@ -61,6 +58,7 @@ class SummaryMovement(models.TransientModel):
 
         account_moves_data = []
 
+        # Collect data for each move
         for key, moves in product_moves.items():
             if moves['in'] and moves['out']:
                 for move in moves['in'] + moves['out']:
@@ -68,31 +66,34 @@ class SummaryMovement(models.TransientModel):
                         'date': move.date,
                         'serial_no': move.reference,
                         'lot_no': move.lot_id.name,
-                        'partner': move.picking_id.partner_id.name,
-                        'partner_address': move.picking_id.partner_id.street,
-                        'partner_city': move.picking_id.partner_id.city,
-                        'partner_zip': move.picking_id.partner_id.zip,
+                        'partner': move.picking_id.partner_id.name if move.picking_id else move.pos_order_id.partner_id.name,
+                        'partner_address': move.picking_id.partner_id.street if move.picking_id else move.pos_order_id.partner_id.street,
+                        'partner_city': move.picking_id.partner_id.city if move.picking_id else move.pos_order_id.partner_id.city,
+                        'partner_zip': move.picking_id.partner_id.zip if move.picking_id else move.pos_order_id.partner_id.zip,
                         'product': move.product_id.name,
                     }
                     account_moves_data.append(data)
 
-        current_datetime_pakistan = datetime.now(pytz.timezone('Asia/Karachi'))
+        # Get the current date and time in the user's timezone
+        user_tz = self.env.user.tz or self.env.context.get('tz') or 'UTC'
+        current_datetime_user = datetime.now(pytz.timezone(user_tz))
         data = {
             'account_moves_data': account_moves_data,
             'form': self.read()[0],
-            'current_date': current_datetime_pakistan.strftime('%Y-%m-%d'),
-            'current_time': current_datetime_pakistan.strftime('%H:%M:%S'),
+            'current_date': current_datetime_user.strftime('%Y-%m-%d'),
+            'current_time': current_datetime_user.strftime('%H:%M:%S'),
         }
 
+        # Return the action for generating the Excel report
         return self.env.ref('wh_in_out_report_xlsx_pdf.wh_in_out_xlsx_action_report').report_action(self, data=data)
 
+    # Method to generate PDF report
     def print_pdf_report(self):
         domain = []
         product_id = self.product_id
         lot_id = self.lot_id
         date_start = self.date_start
         date_end = self.date_end
-        # journal_ids = self.journal_ids.ids
 
         if date_start:
             domain += [('date', '>=', date_start)]
@@ -100,16 +101,16 @@ class SummaryMovement(models.TransientModel):
             domain += [('date', '<=', date_end)]
         if product_id:
             domain += [('product_id', '=', product_id.id)]
-        # if journal_ids:
-        #     domain += [('journal_id', 'in', journal_ids)]
         if lot_id:
             domain += [('lot_id', '=', lot_id.id)]
 
+        # Search for stock move lines
         k_move_in = self.env['stock.move.line'].search(domain + [('location_dest_id.usage', '=', 'internal')])
         k_move_out = self.env['stock.move.line'].search(domain + [('location_id.usage', '=', 'internal')])
 
         product_moves = {}
 
+        # Categorize moves by product and lot
         for move in k_move_in:
             key = (move.product_id.id, move.lot_id.id)
             if key not in product_moves:
@@ -124,6 +125,7 @@ class SummaryMovement(models.TransientModel):
 
         account_moves_data = []
 
+        # Collect data for each move
         for key, moves in product_moves.items():
             if moves['in'] and moves['out']:
                 for move in moves['in'] + moves['out']:
@@ -131,40 +133,44 @@ class SummaryMovement(models.TransientModel):
                         'date': move.date,
                         'serial_no': move.reference,
                         'lot_no': move.lot_id.name,
-                        'partner': move.picking_id.partner_id.name,
-                        'partner_address': move.picking_id.partner_id.street,
-                        'partner_city': move.picking_id.partner_id.city,
-                        'partner_zip': move.picking_id.partner_id.zip,
+                        'partner': move.picking_id.partner_id.name if move.picking_id else move.pos_order_id.partner_id.name,
+                        'partner_address': move.picking_id.partner_id.street if move.picking_id else move.pos_order_id.partner_id.street,
+                        'partner_city': move.picking_id.partner_id.city if move.picking_id else move.pos_order_id.partner_id.city,
+                        'partner_zip': move.picking_id.partner_id.zip if move.picking_id else move.pos_order_id.partner_id.zip,
                         'product': move.product_id.name,
                     }
                     account_moves_data.append(data)
 
-        current_datetime_pakistan = datetime.now(pytz.timezone('Asia/Karachi'))
+        # Get the current date and time in the user's timezone
+        user_tz = self.env.user.tz or self.env.context.get('tz') or 'UTC'
+        current_datetime_user = datetime.now(pytz.timezone(user_tz))
         data = {
             'account_moves_data': account_moves_data,
             'form': self.read()[0],
-            'current_date': current_datetime_pakistan.strftime('%Y-%m-%d'),
-            'current_time': current_datetime_pakistan.strftime('%H:%M:%S'),
+            'current_date': current_datetime_user.strftime('%Y-%m-%d'),
+            'current_time': current_datetime_user.strftime('%H:%M:%S'),
         }
-        return self.env.ref('wh_in_out_report_xlsx_pdf.wh_in_out_pdf_report_action').report_action(self, data=data)
 
+        # Return the action for generating the PDF report
+        return self.env.ref('wh_in_out_report_xlsx_pdf.wh_in_out_pdf_report_action').report_action(self, data=data)
 
 class StockMoveWizard(models.TransientModel):
     _name = 'stock.move.wizard'
     _description = 'Stock Move Wizard'
 
+    # Fields for the wizard
     check = fields.Boolean(default=False)
     processed = fields.Boolean(default=False)
     start_date = fields.Date(string="Start Date")
     end_date = fields.Date(string="End Date", default=fields.Date.today)
 
+    # Method to process stock moves
     def process_stock_moves(self):
         if self.processed:
             raise UserError('The stock moves have already been processed.')
 
         self.check = True
 
-        # Define the domain using the start_date and end_date
         domain = []
         if self.start_date:
             domain.append(('date', '>=', self.start_date))
@@ -178,13 +184,13 @@ class StockMoveWizard(models.TransientModel):
         k_move_in = self.env['stock.move.line'].search(domain_in)
         k_move_out = self.env['stock.move.line'].search(domain_out)
 
-        created_moves = set()  # Set to track created (product_id, lot_id) combinations
+        created_moves = set() # Set to track created (product_id, lot_id) combinations
 
-        # Collecting inbound and outbound moves for each product and lot
+        # Categorize moves by product and lot
         for move in k_move_in:
             key = (move.product_id.id, move.lot_id.id)
             if key not in created_moves:
-                created_moves.add(key)  # Add to set to mark as created
+                created_moves.add(key) # Add to set to mark as created
 
                 product_moves = {
                     'in': [move],
@@ -209,12 +215,12 @@ class StockMoveWizard(models.TransientModel):
                             'date_in_wh_location': date_in,
                             'date_out_going_to_partner_customer': move_out.date,
                             'serial': move_out.lot_id.name,
-                            'inventory_variation_reference': move_out.picking_id.name,
+                            'inventory_variation_reference': move_out.picking_id.name if move_out.picking_id else move_out.pos_order_id.name,
                             'inventory_variation_name': move_out.product_id.name,
-                            'customer_name': move_out.picking_id.partner_id.name,
-                            'customer_address_st': move_out.picking_id.partner_id.street,
-                            'address_city': move_out.picking_id.partner_id.city,
-                            'address_zip': move_out.picking_id.partner_id.zip,
+                            'customer_name': move_out.picking_id.partner_id.name if move_out.picking_id else move_out.pos_order_id.partner_id.name,
+                            'customer_address_st': move_out.picking_id.partner_id.street if move_out.picking_id else move_out.pos_order_id.partner_id.street,
+                            'address_city': move_out.picking_id.partner_id.city if move_out.picking_id else move_out.pos_order_id.partner_id.city,
+                            'address_zip': move_out.picking_id.partner_id.zip if move_out.picking_id else move_out.pos_order_id.partner_id.zip,
                             'check': self.check,
                         }
 
@@ -233,6 +239,7 @@ class StockMoveWizard(models.TransientModel):
         if self.end_date:
             detail_domain.append(('date_out_going_to_partner_customer', '<=', self.end_date))
 
+        # Return the action for displaying the stock detail records
         return {
             'type': 'ir.actions.act_window',
             'name': 'Stock Detail',
