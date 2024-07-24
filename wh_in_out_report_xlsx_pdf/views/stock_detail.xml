@@ -1,12 +1,14 @@
 <odoo>
-<record id="action_server_stock_detail" model="ir.actions.server">
-    <field name="name">Show Stock Details</field>
-    <field name="model_id" ref="model_stock_detail"/>
-    <field name="binding_model_id" ref="model_stock_detail"/>
-    <field name="state">code</field>
-    <field name="code">action = records.filter_stock_record()</field>
-</record>
+    <!-- Action to show stock details -->
+    <record id="action_server_stock_detail" model="ir.actions.server">
+        <field name="name">Show Stock Details</field>
+        <field name="model_id" ref="model_stock_detail"/>
+        <field name="binding_model_id" ref="model_stock_detail"/>
+        <field name="state">code</field>
+        <field name="code">action = records.filter_stock_record()</field>
+    </record>
 
+    <!-- Tree view for stock details -->
     <record id="view_stock_detail_tree" model="ir.ui.view">
         <field name="name">stock.detail.tree</field>
         <field name="model">stock.detail</field>
@@ -29,6 +31,7 @@
         </field>
     </record>
 
+    <!-- Search view for stock details -->
     <record id="view_stock_detail_search_filter" model="ir.ui.view">
         <field name="name">stock.detail.search</field>
         <field name="model">stock.detail</field>
@@ -56,13 +59,15 @@
         </field>
     </record>
 
+    <!-- Action for stock detail window -->
     <record id="action_stock_detail" model="ir.actions.act_window">
         <field name="name">Stock Details</field>
         <field name="res_model">stock.detail</field>
         <field name="view_mode">tree,search</field>
     </record>
 
-       <menuitem id="menu_stock_detail"
+    <!-- Menu items for stock details -->
+    <menuitem id="menu_stock_detail"
               name="Stock Details"
               parent="stock.menu_stock_root"
               action="action_stock_detail"/>
@@ -70,6 +75,4 @@
               name="Process Stock Moves"
               parent="menu_stock_detail"
               action="action_stock_move_wizard"/>
-
-
 </odoo>
