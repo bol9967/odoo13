@@ -19,7 +19,7 @@
                                     <th>Address City</th>
                                     <th>Address Zip</th>
                                 </tr>
-                                <!--                               <t t-if="doc.get('account_moves_data')">-->
+                                 <!--                               <t t-if="doc.get('account_moves_data')">-->
                                 <t t-foreach="account_moves_data" t-as="move">
                                     <tr>
                                         <td>
@@ -27,14 +27,13 @@
                                                 <span t-esc="move['date']"/>
                                             </t>
                                         </td>
-
                                         <td>
                                             <t t-if="move['serial_no'].startswith('WH/OUT/')">
                                                 <t t-esc="move['date']"/>
                                             </t>
                                         </td>
-                                        <!-- Lot No for stock out, blank for stock in -->
                                         <td>
+                                        <!-- Lot No for stock out, blank for stock in -->
                                             <t t-if="move['serial_no'].startswith('WH/OUT/')">
                                                 <t t-esc="move['lot_no']"/>
                                             </t>
@@ -44,49 +43,38 @@
                                                 <t t-esc="move['serial_no']"/>
                                             </t>
                                         </td>
-
-
-                                        <!-- Product for stock out, blank for stock in -->
                                         <td>
                                             <t t-if="move['serial_no'].startswith('WH/OUT/')">
                                                 <t t-esc="move['product']"/>
                                             </t>
                                         </td>
-
-                                        <!-- Partner for stock out, blank for stock in -->
                                         <td>
                                             <t t-if="move['serial_no'].startswith('WH/OUT/')">
                                                 <t t-esc="move['partner']"/>
                                             </t>
                                         </td>
-
-                                        <!-- Partner Address for stock out, blank for stock in -->
                                         <td>
                                             <t t-if="move['serial_no'].startswith('WH/OUT/')">
                                                 <t t-esc="move['partner_address']"/>
                                             </t>
                                         </td>
-
-                                        <!-- Partner City for stock out, blank for stock in -->
                                         <td>
                                             <t t-if="move['serial_no'].startswith('WH/OUT/')">
                                                 <t t-esc="move['partner_city']"/>
                                             </t>
                                         </td>
-
-                                        <!-- Partner Zip for stock out, blank for stock in -->
                                         <td>
                                             <t t-if="move['serial_no'].startswith('WH/OUT/')">
                                                 <t t-esc="move['partner_zip']"/>
                                             </t>
                                         </td>
                                     </tr>
-                                </t>                                <!--                                <t t-else="">-->
+                                <!--                                <t t-else="">-->
                                 <!--                                    <tr>-->
                                 <!--                                        <td colspan="8">No data available</td>-->
                                 <!--                                    </tr>-->
                                 <!--                                </t>-->
-
+                                </t>
                             </table>
                         </div>
                     </div>
