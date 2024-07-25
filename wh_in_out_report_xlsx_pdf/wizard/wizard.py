@@ -1,8 +1,7 @@
 from odoo import fields, models, api
 from datetime import datetime
-from odoo.exceptions import UserError
 import pytz
-import json
+from odoo.exceptions import UserError
 
 class SummaryMovement(models.TransientModel):
     _name = 'wh.wizard'
@@ -14,8 +13,6 @@ class SummaryMovement(models.TransientModel):
     product_id = fields.Many2one('product.product')
     lot_id = fields.Many2one('stock.production.lot')
     partner_id = fields.Many2one('res.partner', string='Customer')
-    # Journal field in which we show only just two journal CRV and CPV not show other account in selection.
-    # journal_ids = fields.Many2many('account.journal', string='Journals', required=True, )
 
     # Method to generate Excel report
     def print_excel_report(self):
@@ -24,9 +21,6 @@ class SummaryMovement(models.TransientModel):
         lot_id = self.lot_id
         date_start = self.date_start
         date_end = self.date_end
-        # partner_id = self.picking_id.partner_id
-        # journal_ids = self.journal_ids.ids
-
 
         if date_start:
             domain += [('date', '>=', date_start)]
@@ -37,9 +31,9 @@ class SummaryMovement(models.TransientModel):
         if lot_id:
             domain += [('lot_id', '=', lot_id.id)]
 
-        # Search for stock move lines
-        k_move_in = self.env['stock.move.line'].search(domain + [('location_dest_id.usage', '=', 'internal')])
-        k_move_out = self.env['stock.move.line'].search(domain + [('location_id.usage', '=', 'internal')])
+        # Search for stock move lines with serial numbers
+        k_move_in = self.env['stock.move.line'].search(domain + [('location_dest_id.usage', '=', 'internal'), ('lot_id', '!=', False)])
+        k_move_out = self.env['stock.move.line'].search(domain + [('location_id.usage', '=', 'internal'), ('lot_id', '!=', False)])
 
         product_moves = {}
 
@@ -64,7 +58,7 @@ class SummaryMovement(models.TransientModel):
                 for move in moves['in'] + moves['out']:
                     data = {
                         'date': move.date,
-                        'serial_no': move.reference,
+                        'serial_no': move.lot_id.name,
                         'lot_no': move.lot_id.name,
                         'partner': move.picking_id.partner_id.name if move.picking_id else move.pos_order_id.partner_id.name,
                         'partner_address': move.picking_id.partner_id.street if move.picking_id else move.pos_order_id.partner_id.street,
@@ -104,9 +98,9 @@ class SummaryMovement(models.TransientModel):
         if lot_id:
             domain += [('lot_id', '=', lot_id.id)]
 
-        # Search for stock move lines
-        k_move_in = self.env['stock.move.line'].search(domain + [('location_dest_id.usage', '=', 'internal')])
-        k_move_out = self.env['stock.move.line'].search(domain + [('location_id.usage', '=', 'internal')])
+        # Search for stock move lines with serial numbers
+        k_move_in = self.env['stock.move.line'].search(domain + [('location_dest_id.usage', '=', 'internal'), ('lot_id', '!=', False)])
+        k_move_out = self.env['stock.move.line'].search(domain + [('location_id.usage', '=', 'internal'), ('lot_id', '!=', False)])
 
         product_moves = {}
 
@@ -131,7 +125,7 @@ class SummaryMovement(models.TransientModel):
                 for move in moves['in'] + moves['out']:
                     data = {
                         'date': move.date,
-                        'serial_no': move.reference,
+                        'serial_no': move.lot_id.name,
                         'lot_no': move.lot_id.name,
                         'partner': move.picking_id.partner_id.name if move.picking_id else move.pos_order_id.partner_id.name,
                         'partner_address': move.picking_id.partner_id.street if move.picking_id else move.pos_order_id.partner_id.street,
@@ -177,32 +171,31 @@ class StockMoveWizard(models.TransientModel):
         if self.end_date:
             domain.append(('date', '<=', self.end_date))
 
-        # Adjust the domain filters to ensure they apply correctly
         domain_in = domain + [('location_dest_id.usage', '=', 'internal')]
         domain_out = domain + [('location_id.usage', '=', 'internal')]
 
-        k_move_in = self.env['stock.move.line'].search(domain_in)
-        k_move_out = self.env['stock.move.line'].search(domain_out)
+        k_move_in = self.env['stock.move.line'].search(domain_in + [('lot_id', '!=', False)])
+        k_move_out = self.env['stock.move.line'].search(domain_out + [('lot_id', '!=', False)])
 
-        created_moves = set() # Set to track created (product_id, lot_id) combinations
+        created_moves = set()
 
         # Categorize moves by product and lot
         for move in k_move_in:
-            key = (move.product_id.id, move.lot_id.id)
+            if not move.lot_id:
+                continue  # Skip if the product doesn't have a serial number
+
+            key = move.lot_id.name
             if key not in created_moves:
-                created_moves.add(key) # Add to set to mark as created
+                created_moves.add(key)
 
                 product_moves = {
                     'in': [move],
                     'out': [],
                 }
 
-                # Find corresponding outbound moves
-                for out_move in k_move_out.filtered(
-                        lambda m: m.product_id.id == move.product_id.id and m.lot_id.id == move.lot_id.id):
+                for out_move in k_move_out.filtered(lambda m: m.lot_id.name == move.lot_id.name):
                     product_moves['out'].append(out_move)
 
-                # Creating or updating records in stock.detail
                 if product_moves['in'] and product_moves['out']:
                     date_in = product_moves['in'][0].date.date() if product_moves['in'] else False
 
@@ -229,10 +222,8 @@ class StockMoveWizard(models.TransientModel):
                         else:
                             self.env['stock.detail'].create(vals)
 
-        # Mark the wizard as processed
         self.processed = True
 
-        # Construct the domain for stock.detail based on the date range
         detail_domain = []
         if self.start_date:
             detail_domain.append(('date_in_wh_location', '>=', self.start_date))

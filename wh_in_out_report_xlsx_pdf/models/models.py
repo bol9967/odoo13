@@ -8,7 +8,7 @@ class StockDetail(models.Model):
 
     date_in_wh_location = fields.Datetime(string="Date In WH Location")
     date_out_going_to_partner_customer = fields.Datetime(string="Date Out Going To Partner/Customer")
-    serial = fields.Char(string="Serial")  # Change to Char field
+    serial = fields.Char(string="Serial")  # Ensure this is recorded only if present
     inventory_variation_reference = fields.Char(string="Inventory Variation Reference")
     inventory_variation_name = fields.Char(string="Inventory Variation Name")
     customer_name = fields.Char(string="Customer Name")
@@ -51,7 +51,10 @@ class StockMoveWizard(models.TransientModel):
         created_moves = set()
 
         for move in k_move_in:
-            key = (move.product_id.id, move.lot_id.id)
+            if not move.lot_id:
+                continue  # Skip if the product doesn't have a serial number
+
+            key = move.lot_id.name
             if key not in created_moves:
                 created_moves.add(key)
 
@@ -60,8 +63,7 @@ class StockMoveWizard(models.TransientModel):
                     'out': [],
                 }
 
-                for out_move in k_move_out.filtered(
-                        lambda m: m.product_id.id == move.product_id.id and m.lot_id.id == move.lot_id.id):
+                for out_move in k_move_out.filtered(lambda m: m.lot_id.name == move.lot_id.name):
                     product_moves['out'].append(out_move)
 
                 if product_moves['in'] and product_moves['out']:
