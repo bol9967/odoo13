@@ -1,6 +1,6 @@
 from odoo import models
-from odoo.tools.misc import xlsxwriter
 from datetime import datetime
+from odoo.tools.misc import xlsxwriter
 from num2words import num2words
 
 class CashBook(models.AbstractModel):
